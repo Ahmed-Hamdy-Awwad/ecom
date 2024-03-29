@@ -1,6 +1,7 @@
 from .models import Company
 from rest_framework import viewsets
-from .serializers import CreateCompanySerializer, GetCompanySerializer, ListCompanySerializer
+from django.contrib.auth.models import User
+from .serializers import CreateCompanySerializer, GetCompanySerializer, ListCompanySerializer, UserSerializer
 
 
 class CompanyView(viewsets.ModelViewSet):
@@ -22,3 +23,12 @@ class CompanyView(viewsets.ModelViewSet):
 		if serializer == "get":
 			return Company.objects.select_related('created_by').prefetch_related('managed_by')
 		return Company.objects.all()
+	
+
+class UserView(viewsets.ModelViewSet):
+
+	def get_serializer_class(self):
+		return UserSerializer
+
+	def get_queryset(self):
+		return User.objects.all()
