@@ -90,19 +90,7 @@ WSGI_APPLICATION = 'ecom.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-if os.getenv('LIVE'):
-	print('Live')
-	DATABASES = {
-		"default": {
-				"USER": "root",
-				"NAME": "graduation_project",
-				"PASSWORD": "%5hcOIJz5;dfIs$J",
-				"ENGINE": "django.db.backends.mysql",
-				"HOST": "/cloudsql/carbon-helix-331812:europe-west1:test",
-			}
-}
-else:
-	DATABASES = db_settings
+DATABASES = db_settings
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
