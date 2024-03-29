@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+import os
 from .db_conf import *
 from pathlib import Path
 
@@ -26,7 +27,7 @@ SECRET_KEY = 'django-insecure-kf)n%2)*vwo2vib%_4**ay6k+i2_%d*))w1-#4q+*b6y5zi1=2
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -40,7 +41,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 		'rest_framework.authtoken',
 		'users',
-		'orders'
+		'orders',
+		'rest_framework'
 ]
 
 MIDDLEWARE = [
@@ -88,7 +90,19 @@ WSGI_APPLICATION = 'ecom.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
-DATABASES = db_settings
+if os.getenv('LIVE'):
+	print('Live')
+	DATABASES = {
+		"default": {
+				"USER": "root",
+				"NAME": "graduation_project",
+				"PASSWORD": "%5hcOIJz5;dfIs$J",
+				"ENGINE": "django.db.backends.mysql",
+				"HOST": "/cloudsql/carbon-helix-331812:europe-west1:test",
+			}
+}
+else:
+	DATABASES = db_settings
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
