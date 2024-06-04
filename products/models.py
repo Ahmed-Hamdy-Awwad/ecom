@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+from users.models import Company
+
 
 class StampedModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
@@ -19,6 +21,7 @@ class Product(StampedModel):
     name = models.CharField(max_length=100, null=True, blank=True)
     category = models.ForeignKey(Category, on_delete=models.CASCADE,
                                  related_name="category_product")
+    seller = models.ForeignKey(Company, on_delete=models.CASCADE)
     stock = models.PositiveIntegerField(default=0)
 
 
