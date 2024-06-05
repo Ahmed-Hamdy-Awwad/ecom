@@ -1,24 +1,30 @@
+from django.db import transaction
+
 from rest_framework import serializers
 
 from .models import Category, Product, ProductImage, ProductPrice
 
 
-class CreateBaseSerializer(serializers.ModelSerialzer):
+class CreateCategorySerializer(serializers.ModelSerializer):
+    # created_by = serializers.SerializerMethodField()
+
+    # def get_created_by(self):
+    #     return self.context.get("created_by")
+
     class Meta:
-        exclude = ['created_by',]
+        model = Category
+        fields = "__all__"
+        extra_kwargs = {
+            'created_by': {
+                'read_only': True
+            }
+        }
 
 
-class GetBaseSerializer(serializers.ModelSerialzer):
+class GetCategorySerializer(serializers.ModelSerializer):
     created_by = serializers.SlugRelatedField(slug_field='username',
                                               read_only=True)
 
-
-class CreateCategorySerializer(CreateBaseSerializer):
-    class Meta:
-        model = Category
-
-
-class GetCategorySerializer(GetBaseSerializer):
     class Meta:
         model = Category
         fields = "__all__"
@@ -36,7 +42,7 @@ class ProductPriceSerializer(serializers.Serializer):
         exclude = ['created_by', 'created_at']
 
 
-class CreateProductSerializer(CreateBaseSerializer):
+class CreateProductSerializer(serializers.ModelSerializer):
     product_prices = ProductPriceSerializer(many=True)
     product_images = ProductImageSerializer(many=True)
 
@@ -51,6 +57,7 @@ class CreateProductSerializer(CreateBaseSerializer):
             "product_images"
         ]
 
+    @transaction.atomic()
     def create(self, validated_data):
         product_prices_data = validated_data.pop('product_prices')
         product_images_data = validated_data.pop('product_images')
@@ -66,9 +73,11 @@ class CreateProductSerializer(CreateBaseSerializer):
         return product
 
 
-class GetProductSerializer(GetBaseSerializer):
+class GetProductSerializer(serializers.ModelSerializer):
     product_prices = serializers.SerializerMethodField()
     product_images = serializers.SerializerMethodField()
+    created_by = serializers.SlugRelatedField(slug_field='username',
+                                              read_only=True)
 
     def get_product_prices(self, product: Product):
         return ProductPrice.objects.filter(product=product)
