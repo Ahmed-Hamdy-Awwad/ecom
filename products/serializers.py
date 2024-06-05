@@ -14,11 +14,11 @@ class CreateCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = "__all__"
-        extra_kwargs = {
-            'created_by': {
-                'read_only': True
-            }
-        }
+        # extra_kwargs = {
+        #     'created_by': {
+        #         'read_only': True
+        #     }
+        # }
 
 
 class GetCategorySerializer(serializers.ModelSerializer):

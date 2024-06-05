@@ -5,6 +5,7 @@ from rest_framework.permissions import IsAuthenticated
 from .serializers import OrderSerializer, GetOrderSerializer, OrderItemSerializer, GetOrderItemSerializer
 from rest_framework.viewsets import ModelViewSet
 from .models import Order, OrderItem
+from django.db import transaction
 
 
 class OrderViewSet(ModelViewSet):
@@ -20,11 +21,16 @@ class OrderViewSet(ModelViewSet):
             return GetOrderSerializer
         return OrderSerializer
       
+    @transaction.atomic
     def create(self, request, *args, **kwargs):
         data = request.data
         data._mutable = True
         data['created_by'] = request.user.id
-        return super().create(request, *args, **kwargs)
+        response = super().create(request, *args, **kwargs)
+        if response.status_code ==201:
+            # Bulk Create Order Items
+            results = OrderItem.bulk_create_order_items(request.data.get('order_items'), response.data.get('id'), request.user.id)
+        return response
     
 class OrderItemViewSet(ModelViewSet):
     """Order Item View Set"""
