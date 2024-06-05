@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+import os
 from .db_conf import *
 from pathlib import Path
 
@@ -26,7 +27,7 @@ SECRET_KEY = 'django-insecure-kf)n%2)*vwo2vib%_4**ay6k+i2_%d*))w1-#4q+*b6y5zi1=2
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -38,10 +39,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-		'rest_framework.authtoken',
-        "django_filters",
-		'users',
-		'orders'
+    'rest_framework',
+    'rest_framework.authtoken',
+    "django_filters",
+    'users',
+    'orders',
+    'products',
 ]
 
 MIDDLEWARE = [
