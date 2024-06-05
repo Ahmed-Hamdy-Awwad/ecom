@@ -31,9 +31,10 @@ class OrderItem(models.Model):
   @staticmethod
   @transaction.atomic
   def bulk_create_order_items(order_items_data,order_id, created_by_id):
-    results = 200
+    results = 201
     new_order_items = []
     failed = []
+    print(order_items_data)
     for order_item_data in order_items_data:
           product = Product.objects.filter(id=order_item_data.get('product'))
           if not product:
@@ -56,6 +57,7 @@ class OrderItem(models.Model):
              product_id=order_item_data.get('product')
           )
           new_order_items.append(new_order_item)
-    OrderItem.objects.bulk_create(new_order_items)
-  
+    order_items = OrderItem.objects.bulk_create(new_order_items)
+    if not order_items:
+          results = 400
     return results, failed

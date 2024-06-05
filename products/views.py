@@ -15,7 +15,7 @@ from .serializers import (
     ProductImageSerializer,
     ProductPriceSerializer
 )
-
+import json
 from .models import Category, Product,ProductImage,ProductPrice
 
 
@@ -85,6 +85,7 @@ class ProductViewSet(ModelViewSet):
         'name': ['exact', 'in'],
         'seller__id':['exact','in'],
         'category__id': ['exact', 'in'],
+        "category__name":['exact', 'in'],
         }
     permission_classes = [IsAuthenticated]
 
@@ -96,12 +97,39 @@ class ProductViewSet(ModelViewSet):
     @transaction.atomic
     def create(self, request, *args, **kwargs):
         data = request.data
+        print('data', data)
+        product_prices_data = data.get('product_prices')
+        if product_prices_data and isinstance(product_prices_data, str):
+            product_prices_data = request.data.getlist("product_prices")
+                
         try:
             data._mutable = True
         except (AttributeError) as error:
             print(str(error))
         data['created_by'] = request.user.id
-        return super().create(request, *args, **kwargs)
+
+
+        response = super().create(request, *args, **kwargs)
+        if response.status_code ==201:
+            product_images_data = request.FILES['product_images']
+            print(product_images_data)
+
+            new_product_prices = []
+            
+            for product_price_data in product_prices_data:
+                if product_prices_data and isinstance(product_prices_data, str):
+                    product_price_data = json.loads(product_price_data)
+
+                new_product_prices.append(
+                ProductPrice(product_id=response.data.get('id'), created_by=request.user, **product_price_data,)
+                )
+            ProductPrice.objects.bulk_create(new_product_prices)
+
+            new_product_images = []
+            for product_image_data in product_images_data:
+                new_product_images.append(ProductImage(product_id=response.data.get('id'), created_by=request.user, **product_image_data))
+            ProductImage.objects.bulk_create(new_product_images)
+        return response
     
 
 

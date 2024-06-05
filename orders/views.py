@@ -6,8 +6,9 @@ from .serializers import OrderSerializer, GetOrderSerializer, OrderItemSerialize
 from rest_framework.viewsets import ModelViewSet
 from .models import Order, OrderItem
 from django.db import transaction
-
-
+from rest_framework.exceptions import ValidationError
+from rest_framework import status
+from rest_framework.response import Response
 class OrderViewSet(ModelViewSet):
     """Order View Set"""
     queryset = Order.objects.all()
@@ -16,7 +17,10 @@ class OrderViewSet(ModelViewSet):
     filterset_fields = {
         'supplier__name': ['exact', 'in'],
         'customer__name': ['exact', 'in'], 
-        'order_items__product__category__id': ['exact', 'id']
+        'order_items__product__id': ['exact', 'in'],
+        'order_items__product__name': ['exact', 'in'],
+        'order_items__product__category__id': ['exact', 'in'],
+        'order_items__product__category__name': ['exact', 'in']
         }
     permission_classes = [IsAuthenticated]
 
@@ -28,6 +32,8 @@ class OrderViewSet(ModelViewSet):
     @transaction.atomic
     def create(self, request, *args, **kwargs):
         data = request.data
+        if not request.data.get('order_items'):
+            raise ValidationError('Not Items Added.')
         try:
             data._mutable = True
         except (AttributeError) as error:
@@ -36,7 +42,9 @@ class OrderViewSet(ModelViewSet):
         response = super().create(request, *args, **kwargs)
         if response.status_code ==201:
             # Bulk Create Order Items
-            results = OrderItem.bulk_create_order_items(request.data.get('order_items'), response.data.get('id'), request.user.id)
+            results, failed_order_items = OrderItem.bulk_create_order_items(request.data.get('order_items'), response.data.get('id'), request.user.id)
+            if results != 201:
+                raise ValidationError('Failed to complete order, please try again or contact support.')
         return response
     
 class OrderItemViewSet(ModelViewSet):

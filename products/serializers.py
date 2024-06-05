@@ -46,37 +46,41 @@ class ProductPriceSerializer(serializers.ModelSerializer):
 class CreateProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
-        fields = [
-            "name",
-            "category",
-            "seller",
-            "stock",
-            "product_prices",
-            "product_images"
-        ]
+        fields = "__all__"
+        # fields = [
+        #     "name",
+        #     "category",
+        #     "seller",
+        #     "stock",
+        #     # "product_prices",
+        #     # "product_images"
+        # ]
 
-    @transaction.atomic()
-    def create(self, validated_data):
-        product_prices_data = validated_data.pop('product_prices')
-        product_images_data = validated_data.pop('product_images') # Need Testing
+    # @transaction.atomic()
+    # def create(self, validated_data):
+    #     print('validated_data', validated_data)
+    #     product_prices_data = validated_data.pop('product_prices')
+    #     product_images_data = validated_data.pop('product_images') # Need Testing
 
-        product = Product.objects.create(**validated_data)
+    #     print('product_prices_data',product_prices_data)
+    #     product = Product.objects.create(**validated_data)
 
-        new_product_prices = []
-        for product_price_data in product_prices_data:
-            new_product_prices.append(
-            ProductPrice(product=product, **product_price_data)
-            )
-        ProductPrice.objects.bulk_create(new_product_prices)
+    #     new_product_prices = []
+    #     for product_price_data in product_prices_data:
+    #         new_product_prices.append(
+    #         ProductPrice(product=product, created_by=product.created_by, **product_price_data,)
+    #         )
+    #     ProductPrice.objects.bulk_create(new_product_prices)
 
-        new_product_images = []
-        for product_image_data in product_images_data:
-            new_product_images.append(ProductImage(product=product, **product_image_data))
-        ProductImage.objects.bulk_create(new_product_images)
-        return product
+    #     new_product_images = []
+    #     for product_image_data in product_images_data:
+    #         new_product_images.append(ProductImage(product=product, created_by=product.created_by, **product_image_data))
+    #     ProductImage.objects.bulk_create(new_product_images)
+    #     return product
 
 
 class GetProductSerializer(serializers.ModelSerializer):
+    category = GetCategorySerializer()
     product_prices = ProductPriceSerializer(many=True)
     product_images = ProductImageSerializer(many=True)
     created_by = serializers.SlugRelatedField(slug_field='username',
@@ -91,10 +95,12 @@ class GetProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = [
+            "id",
             "name",
             "category",
             "seller",
             "stock",
             "product_prices",
-            "product_images"
+            "product_images",
+            "created_by"
         ]
