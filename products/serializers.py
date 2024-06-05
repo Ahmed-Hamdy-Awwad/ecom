@@ -30,22 +30,20 @@ class GetCategorySerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
-class ProductImageSerializer(serializers.Serializer):
+class ProductImageSerializer(serializers.ModelSerializer):
+    image = serializers.ImageField()
     class Meta:
         model = ProductImage
         exclude = ['created_by', 'created_at']
 
 
-class ProductPriceSerializer(serializers.Serializer):
+class ProductPriceSerializer(serializers.ModelSerializer):
     class Meta:
         model = ProductPrice
         exclude = ['created_by', 'created_at']
 
 
 class CreateProductSerializer(serializers.ModelSerializer):
-    product_prices = ProductPriceSerializer(many=True)
-    product_images = ProductImageSerializer(many=True)
-
     class Meta:
         model = Product
         fields = [
@@ -60,30 +58,35 @@ class CreateProductSerializer(serializers.ModelSerializer):
     @transaction.atomic()
     def create(self, validated_data):
         product_prices_data = validated_data.pop('product_prices')
-        product_images_data = validated_data.pop('product_images')
+        product_images_data = validated_data.pop('product_images') # Need Testing
 
         product = Product.objects.create(**validated_data)
 
+        new_product_prices = []
         for product_price_data in product_prices_data:
-            ProductPrice.objects.create(product=product, **product_price_data)
+            new_product_prices.append(
+            ProductPrice(product=product, **product_price_data)
+            )
+        ProductPrice.objects.bulk_create(new_product_prices)
 
+        new_product_images = []
         for product_image_data in product_images_data:
-            ProductImage.objects.create(product=product, **product_image_data)
-
+            new_product_images.append(ProductImage(product=product, **product_image_data))
+        ProductImage.objects.bulk_create(new_product_images)
         return product
 
 
 class GetProductSerializer(serializers.ModelSerializer):
-    product_prices = serializers.SerializerMethodField()
-    product_images = serializers.SerializerMethodField()
+    product_prices = ProductPriceSerializer(many=True)
+    product_images = ProductImageSerializer(many=True)
     created_by = serializers.SlugRelatedField(slug_field='username',
                                               read_only=True)
 
-    def get_product_prices(self, product: Product):
-        return ProductPrice.objects.filter(product=product)
+    # def get_product_prices(self, product: Product):
+    #     return ProductPrice.objects.filter(product=product)
 
-    def get_product_images(self, product: Product):
-        return ProductPrice.objects.filter(product=product)
+    # def get_product_images(self, product: Product):
+    #     return ProductPrice.objects.filter(product=product)
 
     class Meta:
         model = Product
