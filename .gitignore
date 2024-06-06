@@ -165,3 +165,7 @@ cython_debug/
 
 # Shell
 *.sh
+
+# Docker
+Dockerfile
+.dockerignore

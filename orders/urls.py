@@ -7,6 +7,6 @@ router = routers.DefaultRouter()
 router.register("order", OrderViewSet, "order")
 router.register("order-item", OrderItemViewSet, "order-item")
 urlpatterns = [
-	# path("", include(router.urls)),
+	path("", include(router.urls)),
 	# path("yourpattern", yourview.as_view()),
 ]
