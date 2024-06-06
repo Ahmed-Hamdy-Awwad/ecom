@@ -8,6 +8,7 @@ router.register("user", UserView, "user")
 router.register("company", CompanyView, "company")
 router.register("document", DocumentView, "document")
 urlpatterns = [
-	path("", include(router.urls)),
-	# path("yourpattern", yourview.as_view()),
+    path("", include(router.urls)),
+    path("register/", register, name="register"),
+    # path("yourpattern", yourview.as_view()),
 ]
