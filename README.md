@@ -26,3 +26,7 @@ for more information https://tesseract-ocr.github.io/
     Step 2. Install Language data
         Open https://github.com/tesseract-ocr/tessdata and download Arabic language.  ara.traineddata.
         Copy the downloaded file to the tessreact_ocr installation location, some location like: C:\Program Files\Tesseract-OCR\tessdata
+
+### EasyOCR For Windows
+
+Step 1. Install torch and torchvision by following the official instructions here https://pytorch.org. On the pytorch website, be sure to select the right CUDA version you have. If you intend to run on CPU mode only, select CUDA = None.
