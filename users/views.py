@@ -33,6 +33,12 @@ class CompanyView(viewsets.ModelViewSet):
             )
         return Company.objects.all()
 
+    def get_permissions(self):
+        serializer = self.request.query_params.get("serializer")
+        if self.request.method == "GET" and serializer == "get":
+            return [permissions.AllowAny()]
+        return super().get_permissions()
+
 
 class UserView(viewsets.ModelViewSet):
 
