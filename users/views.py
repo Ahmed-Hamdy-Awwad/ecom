@@ -10,6 +10,8 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import action, api_view, permission_classes
 import re
+from rest_framework.filters import SearchFilter
+import django_filters.rest_framework
 
 
 class CompanyView(viewsets.ModelViewSet):
@@ -38,9 +40,7 @@ class CompanyView(viewsets.ModelViewSet):
                 raise Http404
 
         if serializer == "get":
-            return companies.select_related("created_by").prefetch_related(
-                "managed_by"
-            )
+            return companies.select_related("created_by").prefetch_related("managed_by")
         return companies.all()
 
     def get_permissions(self):
@@ -51,8 +51,12 @@ class CompanyView(viewsets.ModelViewSet):
 
 
 class UserView(viewsets.ModelViewSet):
+    search_fields = ("username",)
+    filterset_fields = {"username": ["exact", "in"], "id": ["exact", "in"]}
 
     def get_serializer_class(self):
+        if self.request.method == "GET":
+            return GetUserSerializer
         return UserSerializer
 
     def get_queryset(self):
@@ -127,8 +131,7 @@ def register(request):
     # Required Fields
     for field in ["username", "email", "password", "confirm_password"]:
         if not data.get(field):
-            raise ValidationError(
-                f"{field.replace('_',' ').capitalize()} is required.")
+            raise ValidationError(f"{field.replace('_',' ').capitalize()} is required.")
 
     # Unique Fields
     users = User.objects.filter(
