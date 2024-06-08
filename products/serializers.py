@@ -22,16 +22,14 @@ class CreateCategorySerializer(serializers.ModelSerializer):
 
 
 class GetCategorySerializer(serializers.ModelSerializer):
-    created_by = serializers.SlugRelatedField(slug_field='username',
-                                              read_only=True)
-
     class Meta:
         model = Category
-        fields = "__all__"
+        fields = ["id", "name"]
 
 
 class ProductImageSerializer(serializers.ModelSerializer):
     image = serializers.ImageField()
+
     class Meta:
         model = ProductImage
         exclude = ['created_by', 'created_at']
