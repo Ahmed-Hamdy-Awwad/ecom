@@ -4,6 +4,9 @@ import os
 from django.conf import settings
 import easyocr
 import re
+import cv2
+
+from math import ceil
 
 
 def clearLetters(line):
@@ -46,13 +49,13 @@ def process(file):
         # Write bytes to file
         binary_file.write(file.file.getvalue())
 
+    ######### Tesseract ################
     image = Image.open(temp_path)
     text = pytesseract.image_to_string(image, lang="ara")
 
     count = 1
     for line in text.splitlines():
         if line:
-            print(count, line)
             match (count):
                 case 4:
                     data["name"] = clearLetters(line)
@@ -64,27 +67,84 @@ def process(file):
                     data["industry"] = clearLetters(line)
             count += 1
 
-    reader = easyocr.Reader(
-        ["ar"]
-    )  # this needs to run only once to load the model into memory
-    result = reader.readtext(
-        image,
-    )  # best -0,1, -0.2
-    # result = reader.readtext(image, detail=0, y_ths=-0.2)
+    ######## EasyOCR ############
+    full_results, tax_number_results, industry_results = process_eacyosr(temp_path)
+    if industry_results:
+        data["industry"] = industry_results[0]
+        last_industry_word = data.get("industry").split(" ")[-1]
 
     count = 1
-    max_seq_numbers = None
-    for line in result:
+    industry_line_no = None
+    for line in full_results:
         line = line[1]
         if line:
-            if not max_seq_numbers:
-                max_seq_numbers = clearNumbers(line) or None
-                continue
-            if len(max_seq_numbers) < len(clearNumbers(line)):
-                max_seq_numbers = clearNumbers(line)
-    if max_seq_numbers and len(max_seq_numbers.strip()) <= 21:
-        data["tax_number"] = max_seq_numbers
+            if last_industry_word in line:
+                industry_line_no = count
+            if industry_line_no and count == (industry_line_no + 1):
+                data["tax_number"] = line
+                break
+
+        count += 1
+
+    if not data.get("tax_number") or (
+        data.get("tax_number")
+        and tax_number_results
+        and (
+            len(data.get("tax_number").replace(" ", ""))
+            < len(tax_number_results[0].replace(" ", ""))
+        )
+    ):
+        data["tax_number"] = clearNumbers(tax_number_results[0])
 
     if os.path.exists(temp_path):
         os.remove(temp_path)
     return data
+
+
+def process_eacyosr(temp_path):
+    image = cv2.imread(temp_path)
+    tax_number_section = get_crop_section("tax_number", image)
+    industry_section = get_crop_section("industry", image)
+    reader = easyocr.Reader(
+        ["ar"],
+        gpu=True,
+    )
+    full_results = reader.readtext(image)
+    tax_number_results = reader.readtext(tax_number_section, paragraph=True, detail=0)
+    industry_results = reader.readtext(industry_section, paragraph=True, detail=0)
+    return full_results, tax_number_results, industry_results
+
+
+CROP_DIMENSIONS = {
+    "industry": {
+        "x1": 490,
+        "y1": 350,
+        "x2": 878,
+        "y2": 400,
+    },
+    "tax_number": {
+        "x1": 0,
+        "y1": 400,
+        "x2": 900,
+        "y2": 450,
+    },
+}
+
+
+def get_crop_section(type, image):
+    """Return cropped section"""
+    crop_dimensions = CROP_DIMENSIONS.get(type)
+
+    if crop_dimensions:
+        scale = image.shape[1] / 878
+
+        x1, y1, x2, y2 = crop_dimensions.values()
+
+        x1 = ceil(scale * x1)
+        y1 = ceil(scale * y1)
+        x2 = ceil(scale * x2)
+        y2 = ceil(scale * y2)
+
+        return image[y1:y2, x1:x2]
+
+    return None
