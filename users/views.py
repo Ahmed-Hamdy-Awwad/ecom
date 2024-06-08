@@ -1,3 +1,4 @@
+from django.http import Http404
 from .serializers import *
 from rest_framework import viewsets, permissions, status
 from .models import Company, Document
@@ -27,11 +28,20 @@ class CompanyView(viewsets.ModelViewSet):
 
     def get_queryset(self):
         serializer = self.request.query_params.get("serializer")
+        owner = self.request.query_params.get("owner")
+        companies = Company.objects
+
+        if owner:
+            try:
+                companies.get(created_by__username=owner)
+            except Company.DoesNotExist:
+                raise Http404
+
         if serializer == "get":
-            return Company.objects.select_related("created_by").prefetch_related(
+            return companies.select_related("created_by").prefetch_related(
                 "managed_by"
             )
-        return Company.objects.all()
+        return companies.all()
 
     def get_permissions(self):
         serializer = self.request.query_params.get("serializer")
@@ -117,7 +127,8 @@ def register(request):
     # Required Fields
     for field in ["username", "email", "password", "confirm_password"]:
         if not data.get(field):
-            raise ValidationError(f"{field.replace('_',' ').capitalize()} is required.")
+            raise ValidationError(
+                f"{field.replace('_',' ').capitalize()} is required.")
 
     # Unique Fields
     users = User.objects.filter(

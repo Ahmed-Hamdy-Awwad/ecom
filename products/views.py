@@ -4,7 +4,7 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import ModelViewSet
 import django_filters.rest_framework
 from rest_framework.filters import SearchFilter
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from django.db import transaction
 
 from .serializers import (
@@ -55,7 +55,8 @@ class CategoryViewSet(ModelViewSet):
     """Category View Set"""
 
     queryset = Category.objects.all()
-    filter_backends = [django_filters.rest_framework.DjangoFilterBackend, SearchFilter]
+    filter_backends = [
+        django_filters.rest_framework.DjangoFilterBackend, SearchFilter]
     search_fields = ("name",)
     filterset_fields = {"name": ["exact", "in"]}
     permission_classes = [IsAuthenticated]
@@ -64,6 +65,11 @@ class CategoryViewSet(ModelViewSet):
         if self.request.method == "GET":
             return GetCategorySerializer
         return CreateCategorySerializer
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return AllowAny
+        return super().get_permissions()
 
     @transaction.atomic
     def create(self, request, *args, **kwargs):
@@ -80,7 +86,8 @@ class ProductViewSet(ModelViewSet):
     """Product View Set"""
 
     queryset = Product.objects.all()
-    filter_backends = [django_filters.rest_framework.DjangoFilterBackend, SearchFilter]
+    filter_backends = [
+        django_filters.rest_framework.DjangoFilterBackend, SearchFilter]
     search_fields = (
         "name",
         "seller__name",
@@ -93,6 +100,11 @@ class ProductViewSet(ModelViewSet):
         "category__name": ["exact", "in"],
     }
     permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [AllowAny()]
+        return super().get_permissions()
 
     def get_serializer_class(self):
         if self.request.method == "GET":
@@ -150,7 +162,8 @@ class ProductPriceViewSet(ModelViewSet):
     """Product Prices View Set"""
 
     queryset = ProductPrice.objects.all()
-    filter_backends = [django_filters.rest_framework.DjangoFilterBackend, SearchFilter]
+    filter_backends = [
+        django_filters.rest_framework.DjangoFilterBackend, SearchFilter]
     search_fields = (
         "product__name",
         "product__seller__name",
