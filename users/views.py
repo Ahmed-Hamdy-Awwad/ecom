@@ -1,3 +1,4 @@
+from django.http import Http404
 from .serializers import *
 from rest_framework import viewsets, permissions, status
 from .models import Company, Document
@@ -9,6 +10,8 @@ from rest_framework.response import Response
 from rest_framework.exceptions import ValidationError
 from rest_framework.decorators import action, api_view, permission_classes
 import re
+from rest_framework.filters import SearchFilter
+import django_filters.rest_framework
 
 
 class CompanyView(viewsets.ModelViewSet):
@@ -27,11 +30,18 @@ class CompanyView(viewsets.ModelViewSet):
 
     def get_queryset(self):
         serializer = self.request.query_params.get("serializer")
+        owner = self.request.query_params.get("owner")
+        companies = Company.objects
+
+        if owner:
+            try:
+                companies.get(created_by__username=owner)
+            except Company.DoesNotExist:
+                raise Http404
+
         if serializer == "get":
-            return Company.objects.select_related("created_by").prefetch_related(
-                "managed_by"
-            )
-        return Company.objects.all()
+            return companies.select_related("created_by").prefetch_related("managed_by")
+        return companies.all()
 
     def get_permissions(self):
         serializer = self.request.query_params.get("serializer")
@@ -41,8 +51,12 @@ class CompanyView(viewsets.ModelViewSet):
 
 
 class UserView(viewsets.ModelViewSet):
+    search_fields = ("username",)
+    filterset_fields = {"username": ["exact", "in"], "id": ["exact", "in"]}
 
     def get_serializer_class(self):
+        if self.request.method == "GET":
+            return GetUserSerializer
         return UserSerializer
 
     def get_queryset(self):

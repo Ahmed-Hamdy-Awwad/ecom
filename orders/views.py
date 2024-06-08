@@ -28,8 +28,8 @@ class OrderViewSet(ModelViewSet):
         "customer__name",
     )
     filterset_fields = {
-        "supplier__name": ["exact", "in"],
         "supplier__id": ["exact", "in"],
+        "supplier__name": ["exact", "in"],
         "customer__id": ["exact", "in"],
         "customer__name": ["exact", "in"],
         "order_items__product__id": ["exact", "in"],
