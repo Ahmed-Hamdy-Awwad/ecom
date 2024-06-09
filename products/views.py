@@ -68,7 +68,7 @@ class CategoryViewSet(ModelViewSet):
 
     def get_permissions(self):
         if self.request.method == "GET":
-            return AllowAny
+            return [AllowAny()]
         return super().get_permissions()
 
     @transaction.atomic
@@ -96,6 +96,7 @@ class ProductViewSet(ModelViewSet):
     filterset_fields = {
         "name": ["exact", "in"],
         "seller__id": ["exact", "in"],
+        "seller__name": ["exact", "in"],
         "category__id": ["exact", "in"],
         "category__name": ["exact", "in"],
     }
